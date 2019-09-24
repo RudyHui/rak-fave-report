@@ -9,10 +9,21 @@ export default class FacebookReport extends Component {
     }
 
     loadInstagramReport = () => {
-        window.FB.api('/me/feed', {fields: 'caption,created_time,description,full_picture'}, function(response) {
+        window.FB.api('/me', {fields: 'feed.since(09/01/2019).until(09/31/2019){caption,created_time,description,full_picture}'}, function(response) {
             console.log(response);
-            let data = response.data;
+            let data;
             let viewTable = [];
+
+            if(response.feed) {
+                data = response.feed.data;
+            } else {
+                viewTable.push(
+                    <Table.Row key={0}>
+                        <Table.Cell colSpan='4' textAlign='center'>No data</Table.Cell>
+                    </Table.Row>
+                );
+            }
+
             for (const i in data) {
                 if (data.hasOwnProperty(i)) {
                     const item = data[i];
@@ -22,10 +33,10 @@ export default class FacebookReport extends Component {
                             <Table.Cell>{item.full_picture ? <Image src={item.full_picture} size='small' rounded></Image> : null}</Table.Cell>
                             <Table.Cell>{item.caption ? item.caption : null}</Table.Cell>
                             <Table.Cell>{item.description ? item.description : null}</Table.Cell>
-                        </Table.Row>);
+                        </Table.Row>
+                    );
                 }
             }
-            console.log(viewTable);
             this.setState({
                 data: data,
                 viewTable: viewTable
