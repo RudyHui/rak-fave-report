@@ -1,17 +1,29 @@
 import React, { Component } from 'react';
 import FacebookLogin from 'react-facebook-login';
-import { Header, Grid, Image, Menu, Container, Divider } from 'semantic-ui-react';
+import { Header, Grid, Image, Menu, Container, Segment } from 'semantic-ui-react';
 import InstagramReport from './InstagramReport';
 import FacebookReport from './FacebookReport';
+import { DatesRangeInput } from 'semantic-ui-calendar-react';
 
 export default class Report extends Component {
-    state = {
-        isLoggedIn: false,
-        userId: '',
-        name: '',
-        email: '',
-        picture: ''
+    constructor(props) {
+        super(props);
+        this.state = {
+            isLoggedIn: false,
+            activeName: 'facebook',
+            userId: '',
+            name: '',
+            email: '',
+            picture: '',
+            datesRange: ''
+        };
     }
+
+    handleChange = (event, {name, value}) => {
+        if (this.state.hasOwnProperty(name)) {
+          this.setState({ [name]: value });
+        }
+      }
 
     componentClicked = () => {
         console.log("clicked");
@@ -20,7 +32,6 @@ export default class Report extends Component {
     responseFacebook = (response) =>  {
         let result = response;
         window.FB.api('/me/accounts', {fields: 'instagram_business_account'}, function(response) {
-            console.log(response);
             this.setState({
                 isLoggedIn: true,
                 igAccount: response.data[0].instagram_business_account.id,
@@ -33,21 +44,68 @@ export default class Report extends Component {
     }
 
     handleItemClick = (e, { name }) => {
-        this.setState({ activeItem: name })
-
-        if(name === 'sign-out') {
-            window.FB.logout(function(response) {
+        switch(name) {
+            case 'sign-out':
+                window.FB.logout(function(response) {
+                    this.setState({
+                        isLoggedIn: false
+                    })
+                }.bind(this));
+                break;
+            case 'facebook':
                 this.setState({
-                    isLoggedIn: false
+                    activeName: name
                 })
-            }.bind(this));
+                break;
+            case 'instagram':
+                this.setState({
+                    activeName: name
+                })
+                break;
+            default:
+                break;
         }
     }
 
     render() {
-        const { activeItem } = this.state;
+        let activeItem = this.state.activeName;
         let content;
+        let segmentContent;
 
+        if(activeItem === "facebook") {
+            let startDate = null;
+            let endDate = null;
+
+            if(this.state.datesRange) {
+                let arrDate = this.state.datesRange.split(" - ");
+                if(arrDate.length > 1 && arrDate[1]) {
+                    startDate = arrDate[0];
+                    endDate = arrDate[1];
+                }
+            }
+
+            segmentContent = (
+                <Segment>
+                    <Header as='h1'>Facebook Table Report</Header>
+                    <DatesRangeInput
+                        name="datesRange"
+                        placeholder="From - To"
+                        dateFormat="MM/DD/YYYY"
+                        value={this.state.datesRange}
+                        iconPosition="left"
+                        onChange={this.handleChange}
+                    />
+                    <FacebookReport startDate={startDate} endDate={endDate} />
+                </Segment>
+            );
+        } else {
+            segmentContent = (
+                <Segment>
+                    <Header as='h1'>Instagram Table Report</Header>
+                    <InstagramReport id={this.state.igAccount} />
+                </Segment>
+            );
+        }
 
         if(this.state.isLoggedIn) {
             content = (
@@ -55,6 +113,20 @@ export default class Report extends Component {
                     <Menu stackable>
                         <Menu.Item header>
                             Fave Report
+                        </Menu.Item>
+                        <Menu.Item
+                            name='facebook'
+                            active={activeItem === 'facebook'}
+                            onClick={this.handleItemClick}
+                        >
+                            Facebook
+                        </Menu.Item>
+                        <Menu.Item
+                            name='instagram'
+                            active={activeItem === 'instagram'}
+                            onClick={this.handleItemClick}
+                        >
+                            Instagram
                         </Menu.Item>
 
                         <Menu.Item position='right'>
@@ -72,11 +144,7 @@ export default class Report extends Component {
                     </Menu>
                     <Container>
                         <Container fluid>
-                            <Header as='h1'>Instagram Table Report</Header>
-                            <InstagramReport id={this.state.igAccount} />
-                            <Divider />
-                            <Header as='h1'>Facebook Table Report</Header>
-                            <FacebookReport />
+                            {segmentContent}
                         </Container>
                     </Container>
                 </div>
