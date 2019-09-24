@@ -3,14 +3,16 @@ import { Table, Image } from 'semantic-ui-react'
 import moment from 'moment'
 
 export default class InstagramReport extends Component {
-    state = {
-        data: [],
-        viewTable: []
+    constructor(props) {
+        super(props);
+        this.state = {
+            data: [],
+            viewTable: []
+        };
     }
 
     loadInstagramReport = () => {
         window.FB.api(`/${this.props.id}/media`, {fields: 'caption,media_type,thumbnail_url,media_url,username,timestamp'}, function(response) {
-            console.log(response);
             let data = response.data;
             let viewTable = [];
             let imageView;
@@ -32,7 +34,6 @@ export default class InstagramReport extends Component {
                         </Table.Row>);
                 }
             }
-            console.log(viewTable);
             this.setState({
                 data: data,
                 viewTable: viewTable
